@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   CheckCircle2, 
@@ -24,6 +25,10 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [isStarted, setIsStarted] = useState(false);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const TEST_DURATION = 25 * 60; // 25 minutes
+
+const [timeLeft, setTimeLeft] = useState(TEST_DURATION);
+const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isFinished, setIsFinished] = useState(false);
   const [showReview, setShowReview] = useState(false);
@@ -41,11 +46,28 @@ export default function App() {
     if (currentSectionIndex < TEST_DATA.length - 1) {
       setCurrentSectionIndex(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      setIsFinished(true);
-      setShowReview(true);
-    }
+    }else {
+  setIsFinished(true);
+  setShowReview(true);
+  setIsTimerRunning(false);
+}
   };
+  useEffect(() => {
+  if (!isTimerRunning) return;
+
+  if (timeLeft <= 0) {
+    setIsFinished(true);
+    setShowReview(true);
+    setIsTimerRunning(false);
+    return;
+  }
+
+  const interval = setInterval(() => {
+    setTimeLeft(prev => prev - 1);
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [isTimerRunning, timeLeft]);
 
   const handleBack = () => {
     if (currentSectionIndex > 0) {
@@ -92,6 +114,8 @@ export default function App() {
     setShowReview(false);
     setIsStarted(false);
     setUserName('');
+    setTimeLeft(TEST_DURATION);
+setIsTimerRunning(false);
   };
 
   if (!isStarted) {
@@ -127,8 +151,13 @@ export default function App() {
           </div>
 
           <button
-            onClick={() => userName.trim() && setIsStarted(true)}
-            disabled={!userName.trim()}
+        onClick={() => {
+  if (userName.trim()) {
+    setIsStarted(true);
+    setTimeLeft(TEST_DURATION);
+    setIsTimerRunning(true);
+  }
+}}
             className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-200 active:scale-95 flex items-center justify-center gap-3"
           >
             Testni boshlash
@@ -273,6 +302,23 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
       {/* Header */}
+      {/* TIMER */}
+<div className="text-right">
+  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+    Time Left
+  </div>
+  <div className={`text-sm font-black ${
+    timeLeft <= 60 ? 'text-rose-600 animate-pulse' : 'text-slate-700'
+  }`}>
+    {Math.floor(timeLeft / 60)
+      .toString()
+      .padStart(2, '0')}
+    :
+    {(timeLeft % 60)
+      .toString()
+      .padStart(2, '0')}
+  </div>
+</div>
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
